@@ -13,16 +13,6 @@ a, a:visited, a:active {
 	height:100%;
 }
 
-.logo {
-	background-image:url(../img/isometric_black_bordered.png);
-	background-repeat:no-repeat;
-	background-size:contain;
-	vertical-align:middle;
-	width:4em;
-	height:5em;
-	display:inline-block;
-}
-
 .place-icon {
 	width:auto !important;
 	height:auto !important;
@@ -244,7 +234,7 @@ a, a:visited, a:active {
 		}
 		#places_table tbody tr.selected {
 			font-weight:bold;
-			cursor:none;
+			cursor:default;
 		}
 		#places_table tbody tr.selected > td:first-child {
 			background-color:#FFF;

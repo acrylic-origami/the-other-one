@@ -43,20 +43,21 @@ export default class extends React.Component {
 			n_request: +(term !== null),
 			n_fulfilled: 0,
 			request: null,
-			show_table: false,
+			show_table: true,
 			err: null,
 			copying: false
 		};
+	}
+	componentDidMount() {
+		this.search_bar_ref.current.focus();
 		
 		window.addEventListener('popstate', e => {
 			const { term } = fromURL();
 			this.setState({ term });
 			this.handle_term(term, false);
 		});
+		const { term } = fromURL();
 		this.handle_term(term, false);
-	}
-	componentDidMount() {
-		this.search_bar_ref.current.focus();
 	}
 	fail = (e) => {
 		this.setState(({ n_fulfilled }) => ({ err: [e.message, false], n_fulfilled: n_fulfilled + 1 }));
@@ -75,11 +76,20 @@ export default class extends React.Component {
 						body: F
 					})
 						.then(res => res.json())
-						.then(places => this.setState(({ n_fulfilled }) => ({
-								places: places.map(p_ => Object.assign(p_, { latlng: latLng(p_.lat, p_.lon), pop: parseInt(p_.pop) })),
-								selected_place: null,
+						.then(places => {
+							this.setState(({ n_fulfilled }) => ({
 								n_fulfilled: n_fulfilled + 1
-							})))
+							}))
+							if(places.length > 0) {
+								this.setState({
+									places: places.map(p_ => Object.assign(p_, { latlng: latLng(p_.lat, p_.lon), pop: parseInt(p_.pop) })),
+									selected_place: null,
+								});
+							}
+							else {
+								this.fail(new Error(`City "${term}" was not found.`))
+							}
+						})
 						.catch(e => console.log(e) || this.fail(new Error('Could not handle query term.')))
 			});
 		}
@@ -142,7 +152,6 @@ export default class extends React.Component {
 			<div id="controls">
 				<div id="context_wrapper">
 					<ul id="context_bar">
-						<li><a href="//lam.io" target="_blank"><div class="logo"></div></a></li>
 						<li className="boxed"><a href="https://xkcd.com/2480/" title="XKCD comic 2480 (No, the Other One)" target="_blank">XKCD 2480</a></li>
 						<li className="boxed"><a href="https://lam.io/projects/x2480" target="_blank">Data Sources and Processing</a></li>
 						<li className="boxed">
@@ -165,7 +174,7 @@ export default class extends React.Component {
 							onChange={e => this.setState({ term: e.target.value })}
 							className={this.state.err && 'err'}
 							value={this.state.term}
-							placeholder='Search place (e.g. Cairo)' />
+							placeholder='Search city name (e.g. Cairo, Washington, Bombay, La Soledad)' />
 						{ (this.state.n_request > this.state.n_fulfilled) && <div className="lds-ellipsis"><div></div><div></div><div></div><div></div></div> }
 					</form>
 				</div>
@@ -190,7 +199,7 @@ export default class extends React.Component {
 												<div className="first-place-multiplier">{(this.state.places[selected_idx].pop / (total_pop - this.state.places[selected_idx].pop)).toFixed(2)}x</div>
 												<div>all other <em className="place-name">{this.state.places[selected_idx].place_name}</em>s combined.</div>
 											</div>
-											<div><input type="checkbox" id="show-table" onChange={e => this.setState({ show_table: e.target.checked })} checked={ this.state.show_table } /><label htmlFor="show-table">Show all places</label></div>
+											<div><input type="checkbox" id="show-table" onChange={e => this.setState({ show_table: e.target.checked })} checked={ this.state.show_table } /><label htmlFor="show-table">Show table</label></div>
 										</div>;
 							})()
 						}
@@ -199,15 +208,17 @@ export default class extends React.Component {
 									<div id="places_table_container">
 										<table id="places_table" cellSpacing="0" cellPadding="0">
 											<thead>
-												<td></td>
-												<td>Name</td>
-												<td>Province</td>
-												<td>Country</td>
-												<td>Pop.</td>
-												<td>Pop. %</td>
+												<tr>
+													<td></td>
+													<td>Name</td>
+													<td>Province</td>
+													<td>Country</td>
+													<td>Pop.</td>
+													<td>Pop. %</td>
+												</tr>
 											</thead>
 											<tbody>
-												{this.state.places.map((p, k) => <tr className={this.state.selected_place === k || (k === 0 && this.state.selected_place === null) ? 'selected' : ''} onClick={_e => this.handleMarkerClick(k)}>
+												{this.state.places.map((p, k) => <tr className={this.state.selected_place === k || (k === 0 && this.state.selected_place === null) ? 'selected' : ''} onClick={_e => this.handleMarkerClick(k)} key={p.geonameid}>
 														<td>{k + 1}</td>
 														<td>{p.place_name}</td>
 														<td>{p.admin1_name}</td>
