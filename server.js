@@ -34,7 +34,7 @@ app.post('/q', multer().none(), (req, res) => {
 					psql.release();
 					fail_req(e);
 				}
-				const term0 = req.body.term.replace(/[^\w\-\' ]/g, '').replace(/ {2,}/g, ' ');
+				const term0 = req.body.term.replace(/\s{1,}/g, ' ');
 				console.log(term0);
 				if(term0.length > N_MAX) {
 					fail(new Error(`Name too long (>${N_MAX} chars, hard to tweet about)`));
@@ -49,6 +49,7 @@ app.post('/q', multer().none(), (req, res) => {
 			    			LEFT JOIN admin1 a1 ON a1.code = CONCAT(p.country_code, '.', p.admin1)
 			    			LEFT JOIN countries c ON c.code = p.country_code
 			    			WHERE p.feature_class = 'P'
+			    				AND n0.name_rank = 1
 			    				AND n0.name ILIKE $1
 			    			ORDER BY p.pop DESC
 						`,

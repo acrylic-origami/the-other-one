@@ -3,7 +3,6 @@ import { Map, Marker, TileLayer, Polyline, Popup, Tooltip , ZoomControl } from '
 import { latLngBounds, latLng, divIcon } from 'leaflet';
 import { decode } from '@mapbox/polyline';
 import Q from 'q';
-import { Base64 } from 'js-base64';
 
 const RANDALL = [42.2377016, -93.6014727];
 const MAG_PREFIXES = [ [1E12, 'T'],  [1E9, 'B'], [1E6, 'M'], [1E3, 'k'], ]
@@ -12,7 +11,7 @@ function fromURL() {
 	const U = new URLSearchParams(window.location.search);
 	const m_term0 = U.get('q');
 	return {
-		term: m_term0 ? Base64.decode(m_term0) : null,
+		term: m_term0 ? decodeURI(m_term0) : null,
 	}
 }
 
@@ -65,14 +64,14 @@ export default class extends React.Component {
 	handle_term = (term, push_history) => {
 		if(term !== null) {
 			if(push_history)
-				history.pushState({}, `route-${term}-done`, `?q=${Base64.encode(term)}`);
+				history.pushState({}, `route-${term}-done`, `?q=${encodeURI(term)}`);
 			
 			const F = new FormData();
 			F.set('term', term);
 			this.setState({
 				request: fetch('/q', {
 						method: 'POST',
-						// headers: new Headers({ 'content-type': 'application/json' }),
+						headers: new Headers({ 'charset': 'UTF-8' }), // { 'content-type': 'application/json' }),
 						body: F
 					})
 						.then(res => res.json())
@@ -152,8 +151,9 @@ export default class extends React.Component {
 			<div id="controls">
 				<div id="context_wrapper">
 					<ul id="context_bar">
+						<li><a href="//lam.io" target="_blank"><div className="logo"></div></a></li>
 						<li className="boxed"><a href="https://xkcd.com/2480/" title="XKCD comic 2480 (No, the Other One)" target="_blank">XKCD 2480</a></li>
-						<li className="boxed"><a href="https://lam.io/projects/x2480" target="_blank">Data Sources and Processing</a></li>
+						<li className="boxed"><a href="https://lam.io/projects/x2480" target="_blank">Here's a writeup analyzing all the cities.</a></li>
 						<li className="boxed">
 							{ this.state.copying ?
 								"Copied!" :
@@ -182,7 +182,7 @@ export default class extends React.Component {
 					<div id="results_pane" className="pane">
 						{
 							this.state.places.length === 1
-								? <span><span className="first-place-name">{plain_format_place(this.state.places[0])}</span> is unique in the world.</span>
+								? <span><span className="first-place-name">{plain_format_place(this.state.places[0])}</span> is unique in this world.</span>
 								: (() => {
 									const selected_idx = this.state.selected_place !== null && this.state.selected_place < this.state.places.length
 										? this.state.selected_place
@@ -211,14 +211,14 @@ export default class extends React.Component {
 												<tr>
 													<td></td>
 													<td>Name</td>
-													<td>Province</td>
+													<td>Province/State</td>
 													<td>Country</td>
 													<td>Pop.</td>
 													<td>Pop. %</td>
 												</tr>
 											</thead>
 											<tbody>
-												{this.state.places.map((p, k) => <tr className={this.state.selected_place === k || (k === 0 && this.state.selected_place === null) ? 'selected' : ''} onClick={_e => this.handleMarkerClick(k)} key={p.geonameid}>
+												{this.state.places.map((p, k) => <tr className={this.state.selected_place === k || (k === 0 && this.state.selected_place === null) ? 'selected' : ''} onClick={_e => this.handleMarkerClick(k)} key={k}>
 														<td>{k + 1}</td>
 														<td>{p.place_name}</td>
 														<td>{p.admin1_name}</td>
